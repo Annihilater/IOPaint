@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  base: &base
+    restart: always
+    ports:
+      - "8080:8080"
+    # Add any common environment variables or volumes here
+    # environment:
+    #   - KEY=VALUE
+    # volumes:
+    #   - ./data:/app/data
+
+  cpu:
+    <<: *base
+    image: iopaint_cpu
+    build:
+      context: ..
+      dockerfile: docker/CPUDockerfile
+    command: >
+      sh -c "pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu &&              python main.py --port 8080 --host 0.0.0.0 --model lama --device cpu"
+
+  gpu:
+    <<: *base
+    image: iopaint_gpu
+    build:
+      context: ..
+      dockerfile: docker/GPUDockerfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: >
+      sh -c "python main.py --port 8080 --host 0.0.0.0 --model lama --device cuda"
